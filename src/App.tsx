@@ -283,7 +283,7 @@ export const App: React.FC = () => {
                         display: "flex",
                         flexDirection: "column",
                         width: "100%",
-                        textAlign: "start",
+                        textAlign: "end",
                       }}
                     >
                       {u.includes("you") ? (
@@ -302,7 +302,7 @@ export const App: React.FC = () => {
                             backgroundColor: "green",
                             color: "white",
                             width: "100%",
-                            textAlign: "end",
+                            textAlign: "start",
                           }}
                         >
                           {`مقابل : ${u.replace("other", "")}`}{" "}
