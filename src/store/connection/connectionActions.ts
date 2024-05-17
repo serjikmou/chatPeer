@@ -46,7 +46,11 @@ export const connectPeer: (
       });
       PeerConnection.onConnectionReceiveData(id, (file: string | Data) => {
         if (typeof file === "string") {
-          dispatch(setMessages("other" + file));
+          if (file === "hangUp") {
+            dispatch(setMessages(file));
+          } else {
+            dispatch(setMessages("other" + file));
+          }
         } else {
           message.info("Receiving file " + file.fileName + " from " + id);
           if (file.dataType === DataType.FILE) {

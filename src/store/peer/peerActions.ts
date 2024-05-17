@@ -44,7 +44,11 @@ export const startPeer: () => (dispatch: Dispatch) => Promise<void> =
           peerId,
           (file: string | Data) => {
             if (typeof file === "string") {
-              dispatch(setMessages("other" + file));
+              if (file === "hangUp") {
+                dispatch(setMessages(file));
+              } else {
+                dispatch(setMessages("other" + file));
+              }
             } else {
               message.info(
                 "Receiving file " + file.fileName + " from " + peerId

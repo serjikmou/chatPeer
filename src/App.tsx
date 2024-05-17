@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  MutableRefObject,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Button,
   Card,
@@ -53,6 +59,7 @@ export const App: React.FC = () => {
   const currentUserVideoRef = useRef<HTMLVideoElement>(null);
   let remoteStreamRef = useRef<MediaStream | null>(null);
   let currentUserStreamRef = useRef<MediaStream | null>(null);
+  let hangUpCall: boolean = false;
   const handleStartSession = () => {
     dispatch(startPeer());
   };
@@ -60,6 +67,8 @@ export const App: React.FC = () => {
   const handleStopSession = async () => {
     await PeerConnection.closePeerSession();
     dispatch(stopPeerSession());
+    if (remoteStreamRef.current) stopTracks(remoteStreamRef.current);
+    if (currentUserStreamRef.current) stopTracks(currentUserStreamRef.current);
   };
 
   const handleConnectOtherPeer = () => {
@@ -83,12 +92,24 @@ export const App: React.FC = () => {
     setText("");
   };
 
+  useEffect(() => {
+    if (messages.includes("hangUp")) {
+      if (remoteStreamRef.current) stopTracks(remoteStreamRef.current);
+      if (currentUserStreamRef.current)
+        stopTracks(currentUserStreamRef.current);
+      message.info("Call Finished");
+    }
+  }, [messages]);
+
   const [fileList, setFileList] = useAsyncState([] as UploadFile[]);
   const [sendLoading, setSendLoading] = useAsyncState(false);
 
   const handleHangCall = async () => {
     if (remoteStreamRef.current) stopTracks(remoteStreamRef.current);
     if (currentUserStreamRef.current) stopTracks(currentUserStreamRef.current);
+    await PeerConnection.sendText(connection.selectedId!, "hangUp", (t) => {
+      dispatch(connectionAction.setMessages(t));
+    });
   };
 
   const handleUpload = async () => {
@@ -246,15 +267,24 @@ export const App: React.FC = () => {
               </Space>
             </Card>
             <Card title="Chat" style={{ maxHeight: "300px", overflow: "auto" }}>
-              <Space
-                style={{ display: "flex", flexDirection: "column" }}
-                direction="horizontal"
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  width: "100%",
+                }}
               >
                 {messages.map((u, index) => {
+                  if (u.includes("hangUp")) return null;
                   return (
                     <div
                       key={index}
-                      style={{ display: "flex", flexDirection: "column" }}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        width: "100%",
+                        textAlign: "start",
+                      }}
                     >
                       {u.includes("you") ? (
                         <div
@@ -264,7 +294,7 @@ export const App: React.FC = () => {
                             width: "100%",
                           }}
                         >
-                          {`You : ${u.replace("you", "")}`}
+                          {`شما : ${u.replace("you", "")}`}
                         </div>
                       ) : (
                         <div
@@ -272,15 +302,16 @@ export const App: React.FC = () => {
                             backgroundColor: "green",
                             color: "white",
                             width: "100%",
+                            textAlign: "end",
                           }}
                         >
-                          {`Other : ${u.replace("other", "")}`}{" "}
+                          {`مقابل : ${u.replace("other", "")}`}{" "}
                         </div>
                       )}
                     </div>
                   );
                 })}
-              </Space>
+              </div>
             </Card>
             <Card title="Send File">
               <Upload
@@ -313,7 +344,11 @@ export const App: React.FC = () => {
               <Button
                 type="primary"
                 onClick={handleHangCall}
-                style={{ marginTop: 16, marginLeft: 8, backgroundColor: "red" }}
+                style={{
+                  marginTop: 16,
+                  marginLeft: 8,
+                  backgroundColor: "red",
+                }}
               >
                 Hang
               </Button>
